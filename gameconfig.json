@@ -1,6 +1,6 @@
 {
   "settings": {
-    "allowDragAndDropBeeBot": true,
-    "allowDragAndDropTargets": true
+    "allowDragAndDropBeeBot": false,
+    "allowDragAndDropTargets": false
   }
 }
