@@ -1,0 +1,304 @@
+{
+  "levels": [
+    {
+      "level": 1,
+      "difficulty": "Easy",
+      "spiders": 1,
+      "targets": [
+        "images/img1.png",
+        "images/img2.png"
+      ]
+    },
+    {
+      "level": 2,
+      "difficulty": "Easy",
+      "spiders": 1,
+      "targets": [
+        "images/img3.png",
+        "images/img4.png"
+      ]
+    },
+    {
+      "level": 3,
+      "difficulty": "Easy",
+      "spiders": 1,
+      "targets": [
+        "images/img5.png",
+        "images/img6.png"
+      ]
+    },
+    {
+      "level": 4,
+      "difficulty": "Easy",
+      "spiders": 1,
+      "targets": [
+        "images/img7.png",
+        "images/img1.png"
+      ]
+    },
+    {
+      "level": 5,
+      "difficulty": "Easy",
+      "spiders": 1,
+      "targets": [
+        "images/img2.png",
+        "images/img3.png"
+      ]
+    },
+    {
+      "level": 6,
+      "difficulty": "Easy",
+      "spiders": 1,
+      "targets": [
+        "images/img4.png",
+        "images/img5.png"
+      ]
+    },
+    {
+      "level": 7,
+      "difficulty": "Easy",
+      "spiders": 1,
+      "targets": [
+        "images/img6.png",
+        "images/img7.png"
+      ]
+    },
+    {
+      "level": 8,
+      "difficulty": "Easy",
+      "spiders": 1,
+      "targets": [
+        "images/img1.png",
+        "images/img3.png"
+      ]
+    },
+    {
+      "level": 9,
+      "difficulty": "Easy",
+      "spiders": 1,
+      "targets": [
+        "images/img2.png",
+        "images/img4.png"
+      ]
+    },
+    {
+      "level": 10,
+      "difficulty": "Easy",
+      "spiders": 1,
+      "targets": [
+        "images/img5.png",
+        "images/img7.png"
+      ]
+    },
+    {
+      "level": 11,
+      "difficulty": "Medium",
+      "spiders": 3,
+      "targets": [
+        "images/img1.png",
+        "images/img2.png",
+        "images/img3.png"
+      ]
+    },
+    {
+      "level": 12,
+      "difficulty": "Medium",
+      "spiders": 3,
+      "targets": [
+        "images/img4.png",
+        "images/img5.png",
+        "images/img6.png"
+      ]
+    },
+    {
+      "level": 13,
+      "difficulty": "Medium",
+      "spiders": 3,
+      "targets": [
+        "images/img7.png",
+        "images/img1.png",
+        "images/img2.png"
+      ]
+    },
+    {
+      "level": 14,
+      "difficulty": "Medium",
+      "spiders": 3,
+      "targets": [
+        "images/img3.png",
+        "images/img4.png",
+        "images/img5.png"
+      ]
+    },
+    {
+      "level": 15,
+      "difficulty": "Medium",
+      "spiders": 3,
+      "targets": [
+        "images/img6.png",
+        "images/img7.png",
+        "images/img1.png"
+      ]
+    },
+    {
+      "level": 16,
+      "difficulty": "Medium",
+      "spiders": 3,
+      "targets": [
+        "images/img2.png",
+        "images/img3.png",
+        "images/img4.png"
+      ]
+    },
+    {
+      "level": 17,
+      "difficulty": "Medium",
+      "spiders": 3,
+      "targets": [
+        "images/img5.png",
+        "images/img6.png",
+        "images/img7.png"
+      ]
+    },
+    {
+      "level": 18,
+      "difficulty": "Medium",
+      "spiders": 3,
+      "targets": [
+        "images/img1.png",
+        "images/img4.png",
+        "images/img7.png"
+      ]
+    },
+    {
+      "level": 19,
+      "difficulty": "Medium",
+      "spiders": 3,
+      "targets": [
+        "images/img2.png",
+        "images/img5.png",
+        "images/img1.png"
+      ]
+    },
+    {
+      "level": 20,
+      "difficulty": "Medium",
+      "spiders": 3,
+      "targets": [
+        "images/img3.png",
+        "images/img6.png",
+        "images/img2.png"
+      ]
+    },
+    {
+      "level": 21,
+      "difficulty": "Hard",
+      "spiders": 5,
+      "targets": [
+        "images/img1.png",
+        "images/img2.png",
+        "images/img3.png",
+        "images/img4.png"
+      ]
+    },
+    {
+      "level": 22,
+      "difficulty": "Hard",
+      "spiders": 5,
+      "targets": [
+        "images/img5.png",
+        "images/img6.png",
+        "images/img7.png",
+        "images/img1.png"
+      ]
+    },
+    {
+      "level": 23,
+      "difficulty": "Hard",
+      "spiders": 5,
+      "targets": [
+        "images/img2.png",
+        "images/img3.png",
+        "images/img4.png",
+        "images/img5.png"
+      ]
+    },
+    {
+      "level": 24,
+      "difficulty": "Hard",
+      "spiders": 5,
+      "targets": [
+        "images/img6.png",
+        "images/img7.png",
+        "images/img1.png",
+        "images/img2.png"
+      ]
+    },
+    {
+      "level": 25,
+      "difficulty": "Hard",
+      "spiders": 5,
+      "targets": [
+        "images/img3.png",
+        "images/img4.png",
+        "images/img5.png",
+        "images/img6.png"
+      ]
+    },
+    {
+      "level": 26,
+      "difficulty": "Hard",
+      "spiders": 5,
+      "targets": [
+        "images/img7.png",
+        "images/img1.png",
+        "images/img3.png",
+        "images/img5.png"
+      ]
+    },
+    {
+      "level": 27,
+      "difficulty": "Hard",
+      "spiders": 5,
+      "targets": [
+        "images/img2.png",
+        "images/img4.png",
+        "images/img6.png",
+        "images/img7.png"
+      ]
+    },
+    {
+      "level": 28,
+      "difficulty": "Hard",
+      "spiders": 5,
+      "targets": [
+        "images/img1.png",
+        "images/img2.png",
+        "images/img5.png",
+        "images/img6.png"
+      ]
+    },
+    {
+      "level": 29,
+      "difficulty": "Hard",
+      "spiders": 5,
+      "targets": [
+        "images/img3.png",
+        "images/img4.png",
+        "images/img7.png",
+        "images/img1.png"
+      ]
+    },
+    {
+      "level": 30,
+      "difficulty": "Hard",
+      "spiders": 5,
+      "targets": [
+        "images/img2.png",
+        "images/img3.png",
+        "images/img6.png",
+        "images/img7.png"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bee-Bot Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #334155;
+        }
+        .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+        .game-area {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1400px; /* Re-added max-width */
+            background-color: #e2e8f0;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+        }
+        .canvas-container {
+            width: 600px;
+            height: 600px; /* Explicitly set height */
+            position: relative; /* For layering canvases */
+        }
+        .controls-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        canvas {
+            border-radius: 0.75rem;
+            touch-action: none;
+        }
+        #beeBotCanvas {
+            position: relative; /* To appear above the path */
+            z-index: 10;
+            border: 4px solid #94a3b8;
+        }
+        #pathCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 5;
+        }
+        #backgroundCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+            width: 100%;
+            max-width: 300px;
+        }
+        /* D-Pad Layout */
+        #penBtn      { grid-row: 1; grid-column: 1; }
+        #forwardBtn  { grid-row: 1; grid-column: 2; }
+        #nextChallengeBtn { grid-row: 1; grid-column: 3; }
+        #leftBtn     { grid-row: 2; grid-column: 1; }
+        #goBtn       { grid-row: 2; grid-column: 2; }
+        #rightBtn    { grid-row: 2; grid-column: 3; }
+        #homeBtn     { grid-row: 3; grid-column: 1; }
+        #backwardBtn { grid-row: 3; grid-column: 2; }
+        #clearBtn    { grid-row: 3; grid-column: 3; }
+
+        .program-display {
+            background-color: #fff;
+            border: 2px solid #cbd5e1;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            min-height: 14.5rem; /* 5 rows * 2.5rem icon height + 4 * 0.5rem gap */
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 0.5rem;
+            min-width: 17rem; /* 5 icons * 2.5rem width + 4 gaps * 0.5rem + 2 * 0.75rem padding = 12.5rem + 2rem + 1.5rem = 16rem, so 17rem should be safe */
+            max-height: 14.5rem; /* Added max-height */
+            overflow-y: auto; /* Added overflow-y */
+        }
+        
+        
+        
+        .program-icon {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            background-color: #f1f5f9;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            user-select: none;
+            position: relative; /* Added for numbering */
+        }
+        .program-icon svg {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+        
+        .program-step-number {
+            position: absolute;
+            top: -0.5rem;
+            right: -0.5rem;
+            background-color: #3b82f6; /* Blue background */
+            color: white;
+            border-radius: 9999px; /* Full circle */
+            padding: 0.2rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: bold;
+            min-width: 1.5rem; /* Ensure it's a circle for single digits */
+            text-align: center;
+            line-height: 1;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            border-radius: 1rem;
+            font-weight: bold;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+        .btn-green { background-color: #4ade80; box-shadow: 0 4px #22c55e; color: #166534; }
+        .btn-blue { background-color: #60a5fa; box-shadow: 0 4px #3b82f6; color: #1e40af; }
+        .btn-red { background-color: #f87171; box-shadow: 0 4px #ef4444; color: #991b1b; }
+        .btn-yellow { background-color: #facc15; box-shadow: 0 4px #eab308; color: #854d0e; }
+        .btn-purple { background-color: #c084fc; box-shadow: 0 4px #a855f7; color: #6b21a8; }
+        .btn-gray { background-color: #cbd5e1; box-shadow: 0 4px #94a3b8; color: #475569; }
+        .btn-gray.active { background-color: #94a3b8; box-shadow: 0 4px #64748b; color: #1e293b; }
+
+        .btn:disabled {
+            background-color: #e2e8f0; /* Light grey background */
+            box-shadow: none; /* Remove shadow */
+            color: #94a3b8; /* Lighter text color */
+            cursor: not-allowed; /* Indicate it's not clickable */
+            transform: none; /* Remove active transform */
+            opacity: 0.6; /* Slightly faded appearance */
+        }
+
+        .message-box {
+            position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.95); border: 2px solid #16a34a;
+            border-radius: 1rem; padding: 2rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center; z-index: 1000; display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+<div class="container relative">
+    <div class="flex flex-col sm:flex-row items-center justify-center mb-6 gap-2">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">Bee-Bot Simulator</h1>
+        <p class="text-sm text-gray-600">Move the Bee-Bot to the places in order</p>
+    </div>
+    <button id="fullscreenBtn" class="absolute top-4 right-4 p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition" title="Toggle Fullscreen">
+        <svg id="fullscreenIconOpen" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m0 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m0 0v-4m0 4l-5-5" /></svg>
+        <svg id="fullscreenIconClose" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 4l-5 5m0 0l5 5m-5-5h11a2 2 0 012 2v2a2 2 0 01-2 2H5a2 2 0 01-2-2v-2a2 2 0 012-2h.5" /></svg>
+    </button>
+
+    <div class="game-area">
+        <div class="canvas-container">
+            <canvas id="backgroundCanvas" width="600" height="600"></canvas>
+            <canvas id="pathCanvas" width="600" height="600"></canvas>
+            <canvas id="beeBotCanvas" width="600" height="600"></canvas>
+        </div>
+        <div class="controls-container">
+            <div class="flex items-center justify-center gap-2 mb-4">
+                <h2 class="text-2xl font-bold text-center">Program</h2>
+                <span id="levelDisplay" class="text-2xl font-bold text-gray-600">1</span>
+            </div>
+            <div id="programDisplay" class="program-display w-full"></div>
+            <h2 class="text-2xl font-bold mt-6 mb-4 text-center">Controls</h2>
+            <div class="controls">
+                <button id="penBtn" class="btn btn-gray" title="Toggle Pen"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor"><path d="M18.04,4.04a2.83,2.83,0,0,0-4,0L3,15.08,3,19a2,2,0,0,0,2,2H8.92L20,9.95a2.83,2.83,0,0,0,0-4ZM7.08,19H5V16.92l8.5-8.5,2.08,2.08Z"/></svg></button>
+                <button id="forwardBtn" class="btn btn-green" title="Move Forward" data-command="forward"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4 10h5v10h6V10h5L12 2z"/></svg></button>
+                <button id="nextChallengeBtn" class="btn btn-purple" title="Next Challenge" disabled>Next</button>
+                <button id="leftBtn" class="btn btn-blue" title="Turn Left" data-command="left"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
+                <button id="goBtn" class="btn btn-yellow">Go!</button>
+                <button id="rightBtn" class="btn btn-blue" title="Turn Right" data-command="right"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor" transform="scale(-1, 1)"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
+                <button id="homeBtn" class="btn btn-purple" title="Return to Start"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></button>
+                <button id="backwardBtn" class="btn btn-green" title="Move Backward" data-command="backward"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22l8-8h-5V4h-6v10H4l8 8z"/></svg></button>
+                <button id="clearBtn" class="btn btn-red" title="Clear Program"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+            </div>
+            
+        </div>
+</div>
+
+<div id="messageBox" class="message-box">
+    <p id="messageText" class="text-xl font-bold text-green-700"></p>
+    <button id="messageCloseBtn" class="mt-4 px-4 py-2 bg-green-500 text-white rounded-lg">OK</button>
+</div>
+
+<script>
+    window.onload = function() {
+        // --- Canvas and DOM Element Setup ---
+        const beeBotCanvas = document.getElementById('beeBotCanvas');
+        const ctx = beeBotCanvas.getContext('2d');
+        const pathCanvas = document.getElementById('pathCanvas');
+        const pathCtx = pathCanvas.getContext('2d');
+        const backgroundCanvas = document.getElementById('backgroundCanvas');
+        const backgroundCtx = backgroundCanvas.getContext('2d');
+
+        const goBtn = document.getElementById('goBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const forwardBtn = document.getElementById('forwardBtn');
+        const backwardBtn = document.getElementById('backwardBtn');
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        const homeBtn = document.getElementById('homeBtn');
+        const penBtn = document.getElementById('penBtn');
+        const nextChallengeBtn = document.getElementById('nextChallengeBtn');
+        const programDisplay = document.getElementById('programDisplay');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+        const messageCloseBtn = document.getElementById('messageCloseBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const fullscreenIconOpen = document.getElementById('fullscreenIconOpen');
+        const fullscreenIconClose = document.getElementById('fullscreenIconClose');
+        
+
+        // --- Global Game State ---
+        let gameConfig = null;
+        let currentLevelIndex = 0;
+        let isPenDown = false;
+        const path = [];
+        const gridSize = 6;
+        let cellSize = beeBotCanvas.width / gridSize;
+        let beeBotStartX, beeBotStartY, beeBotStartDir;
+        let beeBotX = 0, beeBotY = 0, beeBotDir = 0;
+        let currentX = 0, currentY = 0, currentDir = 0;
+        let targetPositions = [];
+        let currentTargetIndex = 0;
+        let spiderPositions = [];
+        const commands = [];
+        let isAnimating = false;
+        let commandIndex = 0;
+        let isDragging = false;
+        let draggedItem = null;
+        let dragOffsetX, dragOffsetY;
+
+        // --- Image Loading ---
+        const beeBotImage = new Image();
+        const backgroundImage = new Image();
+        const spiderImage = new Image();
+        const imageCache = {};
+
+        function preloadImages(callback) {
+            const targetImageSources = [
+                'images/img1.png', 'images/img2.png', 'images/img3.png', 'images/img4.png',
+                'images/img5.png', 'images/img6.png', 'images/img7.png'
+            ];
+            const allImageSources = [
+                { name: 'beebot', src: 'beebot.png', obj: beeBotImage },
+                { name: 'background', src: 'background.png', obj: backgroundImage },
+                { name: 'spider', src: 'spider.png', obj: spiderImage },
+                ...targetImageSources.map(src => ({ name: src, src: src, obj: new Image() }))
+            ];
+            let loadedCount = 0;
+            const totalImages = allImageSources.length;
+
+            allImageSources.forEach(({ name, src, obj }) => {
+                obj.src = src + '?' + new Date().getTime();
+                obj.onload = () => {
+                    loadedCount++;
+                    console.log(`Loaded image: ${name}`);
+                    if (name.startsWith('images/')) {
+                        imageCache[name] = obj;
+                    }
+                    if (loadedCount === totalImages) {
+                        console.log('All required images preloaded.');
+                        callback();
+                    }
+                };
+                obj.onerror = () => {
+                    loadedCount++;
+                    console.warn(`Could not load ${src}.`);
+                    if (loadedCount === totalImages) {
+                        console.log('Finished attempting to load all images.');
+                        callback();
+                    }
+                };
+            });
+        }
+
+        // --- Game Initialization and Level Management ---
+        async function loadConfig() {
+            try {
+                const response = await fetch('config.json?' + new Date().getTime());
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                gameConfig = await response.json();
+                console.log('Game config loaded:', gameConfig);
+                loadLevel();
+            } catch (error) {
+                console.error("Could not load game configuration:", error);
+                showMessage("Failed to load level data.", 'text-red-700');
+            }
+        }
+
+        function loadLevel() {
+            if (!gameConfig || !gameConfig.levels) return;
+            currentLevelIndex = Math.max(0, Math.min(currentLevelIndex, gameConfig.levels.length - 1));
+            const levelData = gameConfig.levels[currentLevelIndex];
+            levelDisplay.textContent = `${levelData.level}/${gameConfig.levels.length}`;
+            initialize(levelData);
+        }
+
+        function initialize(levelData) {
+            if (!levelData) return;
+            drawBackground();
+            beeBotX = Math.floor(Math.random() * gridSize);
+            beeBotY = Math.floor(Math.random() * gridSize);
+            beeBotDir = 0;
+            beeBotStartX = beeBotX;
+            beeBotStartY = beeBotY;
+            beeBotStartDir = beeBotDir;
+            currentX = beeBotX * cellSize;
+            currentY = beeBotY * cellSize;
+            currentDir = beeBotDir;
+            commands.length = 0;
+            clearPath();
+            recordPath(currentX + cellSize / 2, currentY + cellSize / 2);
+            targetPositions = [];
+            spiderPositions = [];
+            currentTargetIndex = 0;
+            const occupiedPositions = [{ x: beeBotX, y: beeBotY }];
+
+            levelData.targets.forEach(targetSrc => {
+                let newTargetX, newTargetY;
+                do {
+                    newTargetX = Math.floor(Math.random() * gridSize);
+                    newTargetY = Math.floor(Math.random() * gridSize);
+                } while (occupiedPositions.some(p => p.x === newTargetX && p.y === newTargetY));
+                targetPositions.push({ x: newTargetX, y: newTargetY, image: imageCache[targetSrc] });
+                occupiedPositions.push({ x: newTargetX, y: newTargetY });
+            });
+
+            for (let i = 0; i < levelData.spiders; i++) {
+                let newSpiderX, newSpiderY;
+                do {
+                    newSpiderX = Math.floor(Math.random() * gridSize);
+                    newSpiderY = Math.floor(Math.random() * gridSize);
+                } while (occupiedPositions.some(p => p.x === newSpiderX && p.y === newSpiderY));
+                spiderPositions.push({ x: newSpiderX, y: newSpiderY });
+                occupiedPositions.push({ x: newSpiderX, y: newSpiderY });
+            }
+            draw();
+            updateProgramDisplay();
+        }
+
+        // --- Drawing Functions ---
+        function drawBackground() {
+            backgroundCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+            if (backgroundImage.complete && backgroundImage.naturalWidth > 0) {
+                backgroundCtx.drawImage(backgroundImage, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, beeBotCanvas.width, beeBotCanvas.height);
+            ctx.strokeStyle = '#94a3b8';
+            for (let i = 0; i <= gridSize; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * cellSize, 0);
+                ctx.lineTo(i * cellSize, beeBotCanvas.height);
+                ctx.stroke();
+                ctx.moveTo(0, i * cellSize);
+                ctx.lineTo(beeBotCanvas.width, i * cellSize);
+                ctx.stroke();
+            }
+            drawTargets();
+            drawSpiders();
+            drawBeeBot(currentX, currentY, currentDir);
+        }
+
+        function drawTargets() {
+            targetPositions.forEach((target, index) => {
+                const targetImage = target.image;
+                if (targetImage && targetImage.complete && targetImage.naturalWidth > 0) {
+                    const imgSize = cellSize * 0.8;
+                    const imgDrawX = target.x * cellSize + (cellSize - imgSize) / 2;
+                    const imgDrawY = target.y * cellSize + (cellSize - imgSize) / 2;
+                    ctx.drawImage(targetImage, imgDrawX, imgDrawY, imgSize, imgSize);
+                    ctx.fillStyle = 'white';
+                    ctx.font = `bold ${cellSize / 3}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    const number = (index + 1).toString();
+                    ctx.strokeStyle = 'black';
+                    ctx.lineWidth = 4;
+                    ctx.strokeText(number, target.x * cellSize + cellSize / 2, target.y * cellSize + cellSize / 2);
+                    ctx.fillText(number, target.x * cellSize + cellSize / 2, target.y * cellSize + cellSize / 2);
+                } else {
+                    ctx.fillStyle = '#facc15';
+                    ctx.fillRect(target.x * cellSize, target.y * cellSize, cellSize, cellSize);
+                }
+            });
+        }
+
+        function drawSpiders() {
+            if (spiderImage.complete && spiderImage.naturalWidth > 0) {
+                spiderPositions.forEach(spider => {
+                    const spiderSize = cellSize * 0.8;
+                    const spiderDrawX = spider.x * cellSize + (cellSize - spiderSize) / 2;
+                    const spiderDrawY = spider.y * cellSize + (cellSize - spiderSize) / 2;
+                    ctx.drawImage(spiderImage, spiderDrawX, spiderDrawY, spiderSize, spiderSize);
+                });
+            }
+        }
+
+        function drawBeeBot(x, y, dir) {
+            const botX = x + cellSize / 2;
+            const botY = y + cellSize / 2;
+            const size = cellSize * 0.7;
+            const angleRad = dir * Math.PI / 180;
+            ctx.save();
+            ctx.translate(botX, botY);
+            ctx.rotate(angleRad);
+            if (beeBotImage.complete && beeBotImage.naturalWidth > 0) {
+                ctx.drawImage(beeBotImage, -size / 2, -size / 2, size, size);
+            }
+            ctx.restore();
+        }
+
+        function drawPath() {
+            pathCtx.clearRect(0, 0, pathCanvas.width, pathCanvas.height);
+            if (path.length < 2) return;
+            pathCtx.strokeStyle = '#ef4444';
+            pathCtx.lineWidth = 10;
+            pathCtx.lineCap = 'round';
+            pathCtx.lineJoin = 'round';
+            pathCtx.beginPath();
+            pathCtx.moveTo(path[0].x, path[0].y);
+            for (let i = 1; i < path.length; i++) {
+                pathCtx.lineTo(path[i].x, path[i].y);
+            }
+            pathCtx.stroke();
+        }
+
+        // --- Game Logic ---
+        function animate() {
+            if (!isAnimating) return;
+            const targetXPos = beeBotX * cellSize;
+            const targetYPos = beeBotY * cellSize;
+            const targetDir = beeBotDir;
+            let angleDiff = Math.abs(currentDir - targetDir);
+            if (angleDiff > 180) angleDiff = 360 - angleDiff;
+            const hasReachedPosition = Math.abs(currentX - targetXPos) < 1 && Math.abs(currentY - targetYPos) < 1;
+            const hasReachedDirection = angleDiff < 1;
+
+            if (hasReachedPosition && hasReachedDirection) {
+                recordPath(currentX + cellSize / 2, currentY + cellSize / 2);
+                if (commandIndex < commands.length) {
+                    processNextCommand();
+                } else {
+                    isAnimating = false;
+                    programDisplay.childNodes.forEach(child => child.style.backgroundColor = 'transparent');
+                    if (currentTargetIndex === targetPositions.length) {
+                        const isLastLevel = currentLevelIndex === gameConfig.levels.length - 1;
+                        if (isLastLevel) {
+                            showMessage("Congratulations! You completed all levels!", 'text-green-700');
+                        } else {
+                            showMessage("You did it! Loading next level...", 'text-green-700');
+                            setTimeout(() => {
+                                currentLevelIndex++;
+                                loadLevel();
+                                messageBox.style.display = 'none';
+                            }, 2000);
+                        }
+                    } else {
+                        showMessage(`Bee-Bot only visited ${currentTargetIndex} of ${targetPositions.length} images. Try again!`, 'text-blue-700');
+                    }
+                }
+            } else {
+                currentX += (targetXPos - currentX) * 0.1;
+                currentY += (targetYPos - currentY) * 0.1;
+                let dDir = targetDir - currentDir;
+                if (dDir > 180) dDir -= 360;
+                if (dDir < -180) dDir += 360;
+                currentDir += dDir * 0.1;
+                recordPath(currentX + cellSize / 2, currentY + cellSize / 2);
+            }
+            draw();
+            requestAnimationFrame(animate);
+        }
+
+        function processNextCommand() {
+            if (commandIndex >= commands.length) return;
+            if (commandIndex > 0) {
+                programDisplay.childNodes[commandIndex - 1].style.backgroundColor = 'transparent';
+            }
+            programDisplay.childNodes[commandIndex].style.backgroundColor = '#fef08a';
+            const command = commands[commandIndex];
+            const oldX = beeBotX, oldY = beeBotY;
+            switch (command) {
+                case 'forward':
+                    if (beeBotDir === 0) beeBotY--; else if (beeBotDir === 90) beeBotX++; else if (beeBotDir === 180) beeBotY++; else if (beeBotDir === 270) beeBotX--;
+                    break;
+                case 'backward':
+                    if (beeBotDir === 0) beeBotY++; else if (beeBotDir === 90) beeBotX--; else if (beeBotDir === 180) beeBotY--; else if (beeBotDir === 270) beeBotX++;
+                    break;
+                case 'left':
+                    beeBotDir = (beeBotDir - 90 + 360) % 360;
+                    break;
+                case 'right':
+                    beeBotDir = (beeBotDir + 90) % 360;
+                    break;
+            }
+            if (beeBotX < 0 || beeBotX >= gridSize || beeBotY < 0 || beeBotY >= gridSize) {
+                isAnimating = false;
+                beeBotX = oldX;
+                beeBotY = oldY;
+                draw();
+                showMessage("Oops! Bee-Bot fell off the grid.", 'text-red-700');
+                return;
+            }
+            if (spiderPositions.some(spider => beeBotX === spider.x && beeBotY === spider.y)) {
+                isAnimating = false;
+                draw();
+                showMessage("Beware of the spider, avoid it!", 'text-red-700');
+                return;
+            }
+            if (currentTargetIndex < targetPositions.length) {
+                const currentTarget = targetPositions[currentTargetIndex];
+                if (beeBotX === currentTarget.x && beeBotY === currentTarget.y) {
+                    currentTargetIndex++;
+                }
+            }
+            commandIndex++;
+        }
+
+        // --- UI and Event Handlers ---
+        function updateProgramDisplay() {
+            programDisplay.innerHTML = '';
+            const icons = {
+                'forward': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#166534"><path d="M12 2L4 10h5v10h6V10h5L12 2z"/></svg>`,
+                'backward': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#166534"><path d="M12 22l8-8h-5V4h-6v10H4l8 8z"/></svg>`,
+                'left': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#1e40af"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>`,
+                'right': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#1e40af" transform="scale(-1, 1)"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>`
+            };
+            commands.forEach((cmd, index) => {
+                const div = document.createElement('div');
+                div.innerHTML = icons[cmd];
+                div.className = 'program-icon';
+                const numSpan = document.createElement('span');
+                numSpan.textContent = index + 1;
+                numSpan.className = 'program-step-number';
+                div.appendChild(numSpan);
+                programDisplay.appendChild(div);
+            });
+        }
+
+        function addCommand(command) {
+            if (isAnimating) return;
+            commands.push(command);
+            updateProgramDisplay();
+        }
+
+        function executeProgram() {
+            if (commands.length === 0 || isAnimating) return;
+            returnToHome();
+            isAnimating = true;
+            commandIndex = 0;
+            setTimeout(() => {
+                processNextCommand();
+                animate();
+            }, 50);
+        }
+
+        function returnToHome() {
+            if (isAnimating) return;
+            beeBotX = beeBotStartX;
+            beeBotY = beeBotStartY;
+            beeBotDir = beeBotStartDir;
+            currentX = beeBotX * cellSize;
+            currentY = beeBotY * cellSize;
+            currentDir = beeBotDir;
+            clearPath();
+            recordPath(currentX + cellSize / 2, currentY + cellSize / 2);
+            draw();
+        }
+
+        function clearPath() {
+            path.length = 0;
+            drawPath();
+        }
+
+        function recordPath(x, y) {
+            if (isPenDown) {
+                path.push({ x, y });
+                drawPath();
+            }
+        }
+
+        function togglePen() {
+            isPenDown = !isPenDown;
+            penBtn.classList.toggle('active', isPenDown);
+        }
+
+        function showMessage(text, color = 'text-green-700') {
+            messageText.textContent = text;
+            messageText.className = `text-xl font-bold ${color}`;
+            messageBox.style.display = 'block';
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+
+        function updateFullscreenIcons() {
+            const isFullscreen = !!document.fullscreenElement;
+            fullscreenIconOpen.classList.toggle('hidden', isFullscreen);
+            fullscreenIconClose.classList.toggle('hidden', !isFullscreen);
+        }
+
+        function resizeCanvas() {
+            const containerWidth = beeBotCanvas.parentElement.clientWidth;
+            const size = Math.min(containerWidth, 600);
+            [beeBotCanvas, pathCanvas, backgroundCanvas].forEach(c => {
+                c.width = size;
+                c.height = size;
+            });
+            cellSize = beeBotCanvas.width / gridSize;
+            currentX = beeBotX * cellSize;
+            currentY = beeBotY * cellSize;
+            drawBackground();
+            draw();
+            drawPath();
+        }
+
+        // --- Event Listeners ---
+        [forwardBtn, backwardBtn, leftBtn, rightBtn].forEach(btn => {
+            btn.addEventListener('click', () => addCommand(btn.dataset.command));
+        });
+        goBtn.addEventListener('click', executeProgram);
+        homeBtn.addEventListener('click', returnToHome);
+        nextChallengeBtn.addEventListener('click', () => !isAnimating && loadLevel());
+        clearBtn.addEventListener('click', () => !isAnimating && (commands.length = 0, updateProgramDisplay()));
+        penBtn.addEventListener('click', togglePen);
+        messageCloseBtn.addEventListener('click', () => messageBox.style.display = 'none');
+        fullscreenBtn.addEventListener('click', toggleFullScreen);
+        document.addEventListener('fullscreenchange', updateFullscreenIcons);
+        
+        window.addEventListener('resize', resizeCanvas);
+
+        // --- Drag and Drop ---
+        function getMousePos(evt) {
+            const rect = beeBotCanvas.getBoundingClientRect();
+            const scaleX = beeBotCanvas.width / rect.width;
+            const scaleY = beeBotCanvas.height / rect.height;
+            const clientX = evt.clientX || (evt.touches && evt.touches[0].clientX);
+            const clientY = evt.clientY || (evt.touches && evt.touches[0].clientY);
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function handleMouseDown(e) {
+            if (isAnimating) return;
+            e.preventDefault();
+            const pos = getMousePos(e);
+            const beeBotRect = { x: currentX, y: currentY, width: cellSize, height: cellSize };
+            if (pos.x >= beeBotRect.x && pos.x <= beeBotRect.x + beeBotRect.width &&
+                pos.y >= beeBotRect.y && pos.y <= beeBotRect.y + beeBotRect.height) {
+                isDragging = true;
+                draggedItem = { type: 'beebot' };
+                dragOffsetX = pos.x - currentX;
+                dragOffsetY = pos.y - currentY;
+                return;
+            }
+            for (let i = 0; i < targetPositions.length; i++) {
+                const target = targetPositions[i];
+                const targetRect = { x: target.x * cellSize, y: target.y * cellSize, width: cellSize, height: cellSize };
+                if (pos.x >= targetRect.x && pos.x <= targetRect.x + targetRect.width &&
+                    pos.y >= targetRect.y && pos.y <= targetRect.y + targetRect.height) {
+                    isDragging = true;
+                    draggedItem = { type: 'target', index: i };
+                    dragOffsetX = pos.x - (target.x * cellSize);
+                    dragOffsetY = pos.y - (target.y * cellSize);
+                    return;
+                }
+            }
+        }
+
+        function handleMouseMove(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            const pos = getMousePos(e);
+            if (draggedItem.type === 'beebot') {
+                currentX = pos.x - dragOffsetX;
+                currentY = pos.y - dragOffsetY;
+            } else if (draggedItem.type === 'target') {
+                const tempTargetX = pos.x - dragOffsetX;
+                const tempTargetY = pos.y - dragOffsetY;
+                draw(); 
+                ctx.globalAlpha = 0.5;
+                const targetImage = targetPositions[draggedItem.index].image;
+                if (targetImage && targetImage.complete) {
+                    ctx.drawImage(targetImage, tempTargetX, tempTargetY, cellSize * 0.8, cellSize * 0.8);
+                } else {
+                    ctx.fillStyle = '#facc15';
+                    ctx.fillRect(tempTargetX, tempTargetY, cellSize, cellSize);
+                }
+                ctx.globalAlpha = 1.0;
+                return;
+            }
+            draw();
+        }
+
+        function handleMouseUp(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            const pos = getMousePos(e);
+            const gridX = Math.floor(pos.x / cellSize);
+            const gridY = Math.floor(pos.y / cellSize);
+            const isValidDrop = gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize;
+
+            if (isValidDrop) {
+                const isOccupiedByOther = (itemType, index) => {
+                    if (itemType !== 'beebot' && gridX === beeBotX && gridY === beeBotY) return true;
+                    if (spiderPositions.some(s => s.x === gridX && s.y === gridY)) return true;
+                    if (targetPositions.some((t, i) => i !== index && t.x === gridX && t.y === gridY)) return true;
+                    return false;
+                };
+
+                if (draggedItem.type === 'beebot' && !isOccupiedByOther('beebot', -1)) {
+                    beeBotX = gridX;
+                    beeBotY = gridY;
+                    beeBotStartX = beeBotX;
+                    beeBotStartY = beeBotY;
+                } else if (draggedItem.type === 'target' && !isOccupiedByOther('target', draggedItem.index)) {
+                    targetPositions[draggedItem.index].x = gridX;
+                    targetPositions[draggedItem.index].y = gridY;
+                }
+            }
+
+            if (draggedItem.type === 'beebot') {
+                currentX = beeBotX * cellSize;
+                currentY = beeBotY * cellSize;
+                clearPath();
+                recordPath(currentX + cellSize / 2, currentY + cellSize / 2);
+            }
+
+            isDragging = false;
+            draggedItem = null;
+            draw();
+        }
+        
+        function handleTouchStart(e) { if (e.touches.length === 1) handleMouseDown(e); }
+        function handleTouchMove(e) { if (e.touches.length === 1) handleMouseMove(e); }
+        function handleTouchEnd(e) {
+            if (e.changedTouches.length === 1) {
+                const touch = e.changedTouches[0];
+                const mouseEvent = { clientX: touch.clientX, clientY: touch.clientY, preventDefault: () => e.preventDefault() };
+                handleMouseUp(mouseEvent);
+            }
+        }
+        beeBotCanvas.addEventListener('mousedown', handleMouseDown);
+        beeBotCanvas.addEventListener('mousemove', handleMouseMove);
+        beeBotCanvas.addEventListener('mouseup', handleMouseUp);
+        beeBotCanvas.addEventListener('mouseleave', handleMouseUp);
+        beeBotCanvas.addEventListener('touchstart', handleTouchStart);
+        beeBotCanvas.addEventListener('touchmove', handleTouchMove);
+        beeBotCanvas.addEventListener('touchend', handleTouchEnd);
+        beeBotCanvas.addEventListener('touchcancel', handleTouchEnd);
+
+        // --- Initial Load ---
+        preloadImages(() => {
+            loadConfig();
+            resizeCanvas();
+        });
+    };
+</script>
+
+</body>
+</html>
